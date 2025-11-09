@@ -3,6 +3,9 @@ import json
 import os
 from decimal import Decimal, getcontext
 from flask import Flask, request, jsonify
+from typing import Any
+
+# For string annotations, we can use the module path directly
 
 # Get Redis URL from environment variables, fallback to localhost
 REDIS_URL = os.getenv('CELERY_BROKER_URL', 'redis://localhost:6379/0')
@@ -16,15 +19,15 @@ flask_app = Flask(__name__)
 
 # Calculate pi to n decimal places using the Leibniz formula with progress tracking
 @celery_app.task(bind=True)
-def calculate_pi(self, n):
+def calculate_pi(self, n: int) -> str:
     getcontext().prec = n + 50  # Extra precision for intermediate calculations
     
     self.update_state(state='PROGRESS', meta={'progress': 0.0, 'result': None})
-    total_terms = max(10000000, n * 10000)  # More terms for higher precision
-    pi_over_4 = Decimal(0)
-    
-    update_frequency = max(1, total_terms // 100)
-    
+    total_terms: int = max(10000000, n * 10000)  # More terms for higher precision
+    pi_over_4: Decimal = Decimal(0)
+
+    update_frequency: int = max(1, total_terms // 100)
+
     for k in range(total_terms):
         term = Decimal((-1) ** k) / Decimal(2 * k + 1)
         pi_over_4 += term
@@ -36,11 +39,11 @@ def calculate_pi(self, n):
                 meta={'progress': progress, 'result': None}
             )
     
-    pi_value = pi_over_4 * 4
-    
-    format_string = f"{{:.{n}f}}"
-    result = format_string.format(pi_value)
-    
+    pi_value: Decimal = pi_over_4 * 4
+
+    format_string: str = f"{{:.{n}f}}"
+    result: str = format_string.format(pi_value)
+
     self.update_state(state='FINISHED', meta=result)
 
     return result
@@ -49,7 +52,7 @@ def calculate_pi(self, n):
 @flask_app.route('/calculate_pi')
 def calculate_pi_endpoint():
     """Flask endpoint to start pi calculation"""
-    n = request.args.get('n', type=int)
+    n: int = request.args.get('n', type=int)
     
     if n is None:
         return jsonify({'error': 'Please provide a valid integer for n parameter'}), 400
@@ -61,7 +64,7 @@ def calculate_pi_endpoint():
         return jsonify({'error': 'Maximum decimal places is 1000'}), 400
     
     # Start the Celery task
-    task = calculate_pi.delay(n)
+    task: Any = calculate_pi.delay(n)
     
     return jsonify({
         'task_id': task.id,
@@ -73,33 +76,33 @@ def calculate_pi_endpoint():
 @flask_app.route('/check_progress')
 def check_progress_endpoint():
     """Flask endpoint to check calculation progress"""
-    task_id = request.args.get('task_id')
+    task_id: str = request.args.get('task_id')
     
     if not task_id:
         return jsonify({'error': 'Please provide task_id parameter'}), 400
     
     # Get task result
-    task = celery_app.AsyncResult(task_id)
+    task: Any = celery_app.AsyncResult(task_id)
     
     print(f"Task state: {task.state}, Task info: {task.info}")
     
     if task.state == 'PROGRESS':
         progress_info = task.info or {}
-        response = {
+        response: dict[str, Any] = {
             'state': 'PROGRESS',
             'progress': progress_info.get('progress', 0.0),
             'result': None
         }
     elif task.state == 'FINISHED' or task.state == 'SUCCESS':
         progress_info = task.info or {}
-        response = {
+        response: dict[str, Any] = {
               'state': 'FINISHED',
               'progress': 1.0,
               'result': task.info
         }
     elif task.state == 'FAILURE':
         # Task failed
-        response = {
+        response: dict[str, Any] = {
             'state': 'FAILED',
             'progress': 0.0,
             'result': None,
@@ -107,7 +110,7 @@ def check_progress_endpoint():
         }
     else:
         print(f"Unhandled task state: {task.state}")
-        response = {
+        response: dict[str, Any] = {
             'state': 'PROGRESS',
             'progress': 0.0,
             'result': None

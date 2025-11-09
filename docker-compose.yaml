@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Redis service for Celery broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: pi-calculator-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Celery worker service
+  celery-worker:
+    build: .
+    container_name: pi-calculator-worker
+    command: celery -A endpoints worker --loglevel=info --concurrency=2
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "-A", "endpoints", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Flask API service
+  flask-api:
+    build: .
+    container_name: pi-calculator-api
+    command: python app.py
+    ports:
+      - "5000:5000"
+    depends_on:
+      redis:
+        condition: service_healthy
+      celery-worker:
+        condition: service_healthy
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - .:/app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: pi-calculator-network

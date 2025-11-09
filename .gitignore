@@ -1,0 +1,35 @@
+# Virtual environment
+.venv/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+.tox/
+*.cover
+*.coverage
+.coverage.*
+.cache
+.pytest_cache/
+
+# Environments
+.env
+.venv
+
+# IDEs
+.vscode/
+/.idea/
+
+# macOS
+.DS_Store

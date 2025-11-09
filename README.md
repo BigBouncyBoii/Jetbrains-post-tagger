@@ -2,19 +2,9 @@
 
 A Python application that calculates π (pi) to n decimal places using Celery for asynchronous processing with Redis as the message broker and Flask for HTTP API endpoints.
 
-## Features
-
-- **Asynchronous pi calculation** using the Leibniz formula with high precision
-- **Progress tracking** with real-time updates
-- **Flask REST API** with two endpoints:
-  - `GET /calculate_pi?n=<decimal_places>` - Start calculation
-  - `GET /check_progress?task_id=<task_id>` - Check progress and get results
-- **Docker Compose** setup for easy deployment
-- **High precision arithmetic** using Python's decimal module
-
 ## Prerequisites
 
-- **Docker** and **Docker Compose**
+- **Docker**, **Docker Compose**
 
 ## Quick Start with Docker Compose
 
@@ -33,13 +23,20 @@ curl "http://localhost:5000/calculate_pi?n=10"
 docker-compose down
 ```
 
+## Features
+
+- **Asynchronous pi calculation** using the Leibniz formula
+- **Progress tracking** with real-time updates
+- **Flask REST API** with two endpoints:
+  - `GET /calculate_pi?n=<decimal_places>` - Start calculation
+  - `GET /check_progress?task_id=<task_id>` - Check progress and get results
+
 ## Docker Compose Services
 
 The application includes these services:
 - **redis**: Redis server for message broker and result backend
 - **celery-worker**: Celery worker for processing pi calculations
 - **flask-api**: Flask web API (available at http://localhost:5000)
-- **celery-flower**: Optional monitoring UI (available at http://localhost:5555)
 
 ### Optional: Start with Celery monitoring
 ```bash
